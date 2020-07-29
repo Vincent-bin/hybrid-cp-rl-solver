@@ -13,7 +13,7 @@ class BrainPPO:
     """
     Definition of the PPO Brain, computing the DQN loss
     """
-    def __init__(self, args, num_node_feat, num_edge_feat):
+    def __init__(self, args, num_node_feat, num_edge_feat, model_file):
         """
         Initialize the PPO Brain
         :param args: argparse object taking hyperparameters
@@ -22,6 +22,10 @@ class BrainPPO:
         """
         self.args = args
         self.policy = ActorCritic(self.args, num_node_feat, num_edge_feat)
+
+        if self.args.load_model:
+            self.policy.load_state_dict(torch.load(model_file, map_location='cpu'), strict=True)
+        
         self.policy_old = ActorCritic(self.args, num_node_feat, num_edge_feat)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
@@ -67,7 +71,7 @@ class BrainPPO:
                 old_actions = torch.stack(mem_actions[start_idx:end_idx])
                 old_log_probs = torch.stack(mem_log_probs[start_idx:end_idx])
                 old_availables = torch.stack(mem_availables[start_idx:end_idx])
-                rewards_tensor = torch.tensor(mem_rewards[start_idx:end_idx])
+                rewards_tensor = torch.FloatTensor(mem_rewards[start_idx:end_idx])
 
                 if self.args.mode == 'gpu':
                     old_actions = old_actions.cuda()

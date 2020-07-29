@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 import time
 import sys
+import csv
 
 import numpy as np
 import torch
@@ -45,7 +46,12 @@ class TrainerPPO:
                                                      max_tw_size=self.args.max_tw_size, is_integer_instance=False,
                                                      seed=np.random.randint(10000))
 
-        self.brain = BrainPPO(self.args, self.num_node_feats, self.num_edge_feats)
+        model_file = ''
+        self.best_it = 0
+        if self.args.load_model:
+            model_file, self.best_it = TrainerPPO.find_model(self.args.save_dir)
+
+        self.brain = BrainPPO(self.args, self.num_node_feats, self.num_edge_feats, model_file)
 
         self.memory = ReplayMemory()
 
@@ -72,7 +78,7 @@ class TrainerPPO:
 
         cur_best_reward = MIN_VAL
 
-        for i in range(self.args.n_episode):
+        for i in range(self.best_it, self.args.n_episode):
 
             self.run_episode()
 
@@ -109,6 +115,9 @@ class TrainerPPO:
                 if avg_reward >= cur_best_reward:
                     cur_best_reward = avg_reward
                     self.brain.save(self.args.save_dir, fn)
+                    with open("{}/best_reward.csv".format(self.args.save_dir), "w") as f:
+                        writer = csv.writer(f)
+                        writer.writerow([i, cur_time, avg_reward])
                 elif i % 10000 == 0:
                     self.brain.save(self.args.save_dir, fn)
 
@@ -187,3 +196,27 @@ class TrainerPPO:
 
         return total_reward
 
+    @staticmethod
+    def find_model(save_dir):
+        """
+        Find and return the .pth.tar model for the corresponding instance type.
+        :return: the location of the model and some hyperparameters used
+        """
+
+        log_file_path = save_dir + "/best_reward.csv"
+        best_reward = 0
+
+        best_it = -1
+        print(log_file_path)
+        with open(log_file_path, 'r') as f:
+            for line in f:
+                    result = line.split(',')
+                    it = int(result[0].strip())
+                    reward = float(result[2].strip())
+                    if reward > best_reward:
+                        best_reward = reward
+                        best_it = it
+
+        assert best_it >= 0, "No model found"
+        model_str = '%s/iter_%d_model.pth.tar' % (save_dir, best_it)
+        return model_str, best_it

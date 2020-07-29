@@ -38,6 +38,8 @@ def parse_arguments():
     parser.add_argument('--save_dir', type=str, default='./result-default')
     parser.add_argument('--plot_training', type=int, default=1)
     parser.add_argument('--mode', default='cpu', help='cpu/gpu')
+    parser.add_argument('--load_model', type=int, default=1)
+
 
     return parser.parse_args()
 
