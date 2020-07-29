@@ -22,6 +22,7 @@ hidden_layer=4
 # Others
 plot_training=1 # Boolean value: plot the training curve or not
 mode=cpu
+load_model=1 # Boolean value: load model from disk
 
 # Folder to save the trained model
 network_arch=hidden_layers-$hidden_layer-latent_dim-$latent_dim/
@@ -51,6 +52,7 @@ python src/problem/tsptw/main_training_ppo_tsptw.py \
     --save_dir $save_dir  \
     --plot_training $plot_training  \
     --mode $mode \
+    --load_model $load_model \
     2>&1 | tee $save_dir/log-training.txt
 
 
